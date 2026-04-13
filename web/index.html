@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MINEOPS // CONTROL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;400;700;800&family=Major+Mono+Display&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #07100b;
+      --bg-2: #0d1812;
+      --surface: #111d17;
+      --rule: #1d3026;
+      --rule-soft: #15241c;
+      --text: #e6f0e8;
+      --dim: #5c7268;
+      --faint: #2c4136;
+      --accent: #5fed83;
+      --accent-warm: #f0a83a;
+      --accent-cool: #4a8a72;
+      --shadow: rgba(95, 237, 131, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    /* Atmospheric layers */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 1px 1px, var(--faint) 1px, transparent 0);
+      background-size: 24px 24px;
+      opacity: 0.45;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    }
+    body::after {
+      content: "";
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0 3px,
+        rgba(255,255,255,0.012) 3px 4px
+      );
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    /* Background ambient blob */
+    .ambient {
+      position: fixed;
+      top: -20%; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, var(--shadow), transparent 60%);
+      filter: blur(60px);
+      pointer-events: none;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      from { transform: translate(-50%, 0); }
+      to { transform: translate(-40%, 5%); }
+    }
+
+    /* Frame layout */
+    .frame {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      background: linear-gradient(180deg, var(--bg-2) 0%, var(--surface) 100%);
+      border: 1px solid var(--rule);
+      padding: 36px 40px 32px;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.5),
+        0 30px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    /* Corner ticks */
+    .frame::before, .frame::after,
+    .corners::before, .corners::after {
+      content: "";
+      position: absolute;
+      width: 14px; height: 14px;
+      border: 1px solid var(--accent);
+      opacity: 0.7;
+    }
+    .frame::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .frame::after  { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+    .corners::before { bottom: -1px; left: -1px; border-right: none; border-top: none; position: absolute; }
+    .corners::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; position: absolute; }
+
+    /* Header */
+    .head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 28px;
+    }
+    .brand {
+      font-family: "Major Mono Display", monospace;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+    .brand .accent { color: var(--accent); }
+    .meta {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .meta .live {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* Status block */
+    .status {
+      padding: 8px 0 28px;
+      position: relative;
+    }
+    .status-label {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 16px;
+    }
+    .status-line {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .status-bracket {
+      font-size: 56px;
+      font-weight: 200;
+      color: var(--faint);
+      line-height: 1;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .status-state {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--text);
+      text-transform: uppercase;
+      transition: color 0.4s ease;
+    }
+    .state-online .status-state { color: var(--accent); text-shadow: 0 0 24px var(--shadow); }
+    .state-booting .status-state { color: var(--accent-warm); }
+    .state-offline .status-state { color: var(--dim); }
+
+    .indicator {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--dim);
+      box-shadow: 0 0 0 0 transparent;
+      margin-left: auto;
+      align-self: center;
+    }
+    .state-online .indicator {
+      background: var(--accent);
+      animation: breath 3s ease-in-out infinite;
+    }
+    .state-booting .indicator {
+      background: var(--accent-warm);
+      animation: pulse-fast 1s ease-in-out infinite;
+    }
+    @keyframes breath {
+      0%, 100% { box-shadow: 0 0 0 0 var(--shadow); transform: scale(1); }
+      50% { box-shadow: 0 0 0 8px transparent; transform: scale(1.15); }
+    }
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Telemetry rows */
+    .telemetry {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      margin-bottom: 28px;
+    }
+    .stat {
+      background: var(--bg-2);
+      padding: 18px 20px;
+    }
+    .stat-label {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-value.muted { color: var(--dim); font-weight: 400; }
+
+    /* Domain */
+    .endpoint {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      margin-bottom: 24px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .endpoint:hover { border-color: var(--accent); background: var(--bg-2); }
+    .endpoint .label {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--dim);
+      flex-shrink: 0;
+    }
+    .endpoint .url {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .endpoint .copy {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+      transition: color 0.2s;
+    }
+    .endpoint:hover .copy { color: var(--accent); }
+    .endpoint.copied::after {
+      content: "COPIED";
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      letter-spacing: 0.3em;
+      font-size: 14px;
+      animation: flash 0.8s ease;
+    }
+    @keyframes flash {
+      0%, 80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Action button */
+    .action {
+      width: 100%;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 18px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 0 0 #2a8348, 0 0 30px var(--shadow);
+    }
+    .action:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 0 0 #2a8348, 0 0 40px var(--shadow);
+    }
+    .action:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 0 #2a8348, 0 0 20px var(--shadow);
+    }
+    .action:disabled {
+      background: var(--rule);
+      color: var(--dim);
+      cursor: not-allowed;
+      box-shadow: 0 4px 0 0 #0a1310;
+    }
+    .action::before { content: "▸ "; opacity: 0.7; }
+
+    /* Footer */
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--rule);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .foot kbd {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      padding: 2px 6px;
+      font-family: inherit;
+      font-size: 9px;
+      color: var(--text);
+    }
+
+    /* Stagger reveal */
+    .reveal { opacity: 0; transform: translateY(8px); animation: reveal 0.6s ease forwards; }
+    .reveal:nth-child(1) { animation-delay: 0.05s; }
+    .reveal:nth-child(2) { animation-delay: 0.15s; }
+    .reveal:nth-child(3) { animation-delay: 0.25s; }
+    .reveal:nth-child(4) { animation-delay: 0.35s; }
+    .reveal:nth-child(5) { animation-delay: 0.45s; }
+    .reveal:nth-child(6) { animation-delay: 0.55s; }
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Booting dots */
+    .dots::after {
+      content: "";
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%   { content: ""; }
+      25%  { content: "."; }
+      50%  { content: ".."; }
+      75%  { content: "..."; }
+    }
+
+    @media (max-width: 520px) {
+      .frame { padding: 28px 24px 24px; }
+      .status-state { font-size: 36px; }
+      .status-bracket { font-size: 44px; }
+      .stat-value { font-size: 22px; }
+      .head { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient"></div>
+
+  <main class="frame state-offline" id="frame">
+    <span class="corners"></span>
+
+    <header class="head reveal">
+      <div class="brand">mineops<span class="accent">//</span>control</div>
+      <div class="meta">
+        <span class="live"></span>
+        <span>LIVE TELEMETRY</span>
+      </div>
+    </header>
+
+    <section class="status reveal">
+      <div class="status-label">// SYSTEM STATE</div>
+      <div class="status-line">
+        <span class="status-bracket">[</span>
+        <span class="status-state" id="state">LOADING</span>
+        <span class="status-bracket">]</span>
+        <span class="indicator"></span>
+      </div>
+    </section>
+
+    <section class="telemetry reveal">
+      <div class="stat">
+        <div class="stat-label">Players Online</div>
+        <div class="stat-value" id="players">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Profile</div>
+        <div class="stat-value muted" id="profile">rlcraft</div>
+      </div>
+    </section>
+
+    <div class="endpoint reveal" id="endpoint">
+      <span class="label">→ JOIN AT</span>
+      <span class="url" id="domain">—</span>
+      <span class="copy">CLICK TO COPY</span>
+    </div>
+
+    <button class="action reveal" id="startBtn" disabled>BOOT SERVER</button>
+
+    <footer class="foot reveal">
+      <span>POLL · 10s</span>
+      <span>COLD START · ~3 MIN</span>
+    </footer>
+  </main>
+
+  <script>
+    const API = "https://oqk9u0dai1.execute-api.ap-southeast-1.amazonaws.com";
+    const $ = (id) => document.getElementById(id);
+
+    let lastState = null;
+
+    async function poll() {
+      try {
+        const r = await fetch(`${API}/status`);
+        const d = await r.json();
+        render(d);
+      } catch (e) {
+        $("state").textContent = "OFFLINE";
+        $("frame").className = "frame state-offline";
+      }
+    }
+
+    function render(d) {
+      const frame = $("frame"), state = $("state"),
+            players = $("players"), domain = $("domain"), btn = $("startBtn");
+
+      frame.className = `frame state-${d.state}`;
+
+      domain.textContent = `${d.domain}:25565`;
+
+      if (d.state === "online") {
+        state.textContent = "ONLINE";
+        state.classList.remove("dots");
+        players.textContent = String(d.players).padStart(2, "0");
+        players.classList.remove("muted");
+        btn.disabled = true;
+        btn.textContent = "RUNNING";
+      } else if (d.state === "booting") {
+        state.textContent = "BOOTING";
+        state.classList.add("dots");
+        players.textContent = "—";
+        players.classList.add("muted");
+        btn.disabled = true;
+        btn.textContent = "BOOTING";
+      } else {
+        state.textContent = "OFFLINE";
+        state.classList.remove("dots");
+        players.textContent = "00";
+        players.classList.add("muted");
+        btn.disabled = false;
+        btn.textContent = "BOOT SERVER";
+      }
+
+      lastState = d.state;
+    }
+
+    $("endpoint").addEventListener("click", () => {
+      const text = $("domain").textContent;
+      navigator.clipboard.writeText(text);
+      $("endpoint").classList.add("copied");
+      setTimeout(() => $("endpoint").classList.remove("copied"), 800);
+    });
+
+    $("startBtn").addEventListener("click", async () => {
+      $("startBtn").disabled = true;
+      $("startBtn").textContent = "DISPATCHING";
+      try {
+        await fetch(`${API}/start`, { method: "POST" });
+        setTimeout(poll, 1200);
+      } catch (e) {
+        $("state").textContent = "ERROR";
+      }
+    });
+
+    poll();
+    setInterval(poll, 10000);
+  </script>
+</body>
+</html>

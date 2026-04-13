@@ -6,7 +6,7 @@ Idle cost: ~$2/month. Active cost: ~$0.12/hour. No always-on EC2, no dedicated h
 
 Built with AWS Fargate, EFS, Lambda, Terraform, Docker, Cloudflare DNS — a full serverless stack around a vanilla/modded Minecraft server.
 
-![Control Panel](https://img.shields.io/badge/control--panel-live-brightgreen) ![Terraform](https://img.shields.io/badge/terraform-IaC-623CE4) ![AWS](https://img.shields.io/badge/AWS-Fargate-FF9900) ![License](https://img.shields.io/badge/license-MIT-blue)
+![Control Panel](https://img.shields.io/badge/control--panel-live-brightgreen) ![Terraform](https://img.shields.io/badge/terraform-IaC-623CE4) ![AWS](https://img.shields.io/badge/AWS-Fargate-FF9900) ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 ---
 
@@ -329,4 +329,4 @@ Flow: `feat/*` → `develop` → `main`.
 
 ## License
 
-MIT — do whatever you want, attribution appreciated.
+Apache 2.0 — see [LICENSE](LICENSE). You can use, modify, and distribute freely; attribution required, no warranty provided.

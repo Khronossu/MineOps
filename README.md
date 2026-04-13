@@ -146,6 +146,8 @@ Connect the repo to **Cloudflare Workers & Pages** → Git. Production branch: `
 
 ## Switching mod profiles
 
+> For a step-by-step walkthrough (AWS CLI setup, different MC versions, Forge caveats), see **[docs/changing-mods-guide.md](docs/changing-mods-guide.md)**.
+
 Profiles live on S3 at `s3://<bucket>/minecraft-mods/<profile-name>/`. Each contains:
 
 - `server.jar` — the server JAR (vanilla, Forge, Fabric, whatever)

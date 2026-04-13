@@ -103,11 +103,11 @@ resource "aws_security_group" "minecraft" {
   }
 
   ingress {
-    description = "RCON from within VPC only"
+    description = "RCON - password protected"
     from_port   = 25575
     to_port     = 25575
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {

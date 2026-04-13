@@ -11,7 +11,7 @@ terraform {
   backend "s3" {
     bucket  = "first-demo-bucket-purin-boonpetch"
     key     = "minecraft/terraform.tfstate"
-    region  = "ap-southeast-1"
+    region  = "ap-southeast-2"
     encrypt = true
   }
 }
@@ -33,6 +33,7 @@ module "network" {
   project     = var.project_name
   environment = var.environment
   vpc_cidr    = var.vpc_cidr
+  region      = var.region
 }
 
 module "storage" {
@@ -52,19 +53,20 @@ module "efs" {
 }
 
 module "ecs" {
-  source             = "./modules/ecs"
-  project            = var.project_name
-  environment        = var.environment
-  region             = var.region
-  vpc_id             = module.network.vpc_id
-  private_subnet_ids = module.network.private_subnet_ids
-  minecraft_sg_id    = module.network.minecraft_sg_id
-  efs_id             = module.efs.efs_id
+  source              = "./modules/ecs"
+  project             = var.project_name
+  environment         = var.environment
+  region              = var.region
+  vpc_id              = module.network.vpc_id
+  private_subnet_ids  = module.network.private_subnet_ids
+  public_subnet_ids   = module.network.public_subnet_ids
+  minecraft_sg_id     = module.network.minecraft_sg_id
+  efs_id              = module.efs.efs_id
   efs_access_point_id = module.efs.access_point_id
-  mod_bucket_name    = var.mod_bucket_name
-  jvm_min_mem        = var.jvm_min_mem
-  jvm_max_mem        = var.jvm_max_mem
-  account_id         = data.aws_caller_identity.current.account_id
+  mod_bucket_name     = var.mod_bucket_name
+  jvm_min_mem         = var.jvm_min_mem
+  jvm_max_mem         = var.jvm_max_mem
+  account_id          = data.aws_caller_identity.current.account_id
 }
 
 module "lambda" {

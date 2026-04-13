@@ -72,6 +72,9 @@ for DIR in config scripts resources structures; do
   fi
 done
 
+# Copy server.properties from S3 (ensures RCON and other settings are always correct)
+aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/server.properties" /minecraft/server.properties 2>/dev/null || true
+
 echo "[start] Starting Minecraft server..."
 exec "$JAVA_BIN" \
   -Xms${JVM_MIN_MEM:-1G} \

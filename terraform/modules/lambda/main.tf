@@ -47,6 +47,11 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         Effect   = "Allow"
         Action   = ["ec2:DescribeNetworkInterfaces"]
         Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = "arn:aws:lambda:${var.region}:${var.account_id}:function:${var.project}-${var.environment}-scaler"
       }
     ]
   })
@@ -104,4 +109,49 @@ resource "aws_lambda_permission" "eventbridge" {
   function_name = aws_lambda_function.scaler.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.scale_down_check.arn
+}
+
+# HTTP API for the web control panel
+resource "aws_apigatewayv2_api" "control" {
+  name          = "${var.project}-${var.environment}-control"
+  protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_headers = ["Content-Type"]
+  }
+}
+
+resource "aws_apigatewayv2_integration" "lambda" {
+  api_id                 = aws_apigatewayv2_api.control.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.scaler.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "start" {
+  api_id    = aws_apigatewayv2_api.control.id
+  route_key = "POST /start"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "status" {
+  api_id    = aws_apigatewayv2_api.control.id
+  route_key = "GET /status"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_stage" "default" {
+  api_id      = aws_apigatewayv2_api.control.id
+  name        = "$default"
+  auto_deploy = true
+}
+
+resource "aws_lambda_permission" "apigw" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.scaler.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.control.execution_arn}/*/*"
 }

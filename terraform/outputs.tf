@@ -22,3 +22,8 @@ output "ecr_repository_url" {
   description = "ECR repository URL for the Minecraft image"
   value       = module.ecs.ecr_repository_url
 }
+
+output "control_api_url" {
+  description = "HTTP API endpoint for the web control panel"
+  value       = module.lambda.control_api_url
+}

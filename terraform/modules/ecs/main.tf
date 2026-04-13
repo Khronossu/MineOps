@@ -201,8 +201,8 @@ resource "aws_ecs_service" "minecraft" {
   }
 
   deployment_circuit_breaker {
-    enable   = true
-    rollback = true
+    enable   = false
+    rollback = false
   }
 
   lifecycle {

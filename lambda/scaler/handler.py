@@ -36,7 +36,8 @@ def lambda_handler(event, context):
 def scale_up():
     svc = _describe_service()
     if svc["desiredCount"] >= 1:
-        return {"status": "already_running", "desiredCount": svc["desiredCount"]}
+        ip = _get_task_public_ip()
+        return {"status": "already_running", "desiredCount": svc["desiredCount"], "ip": ip}
 
     ecs.update_service(cluster=CLUSTER, service=SERVICE, desiredCount=1)
 
@@ -132,6 +133,7 @@ def _get_task_public_ip():
 def _get_player_count():
     ip = _get_task_public_ip()
     if not ip:
+        print("[rcon] no task IP — treating as 0 players")
         return 0
 
     rcon_password = ssm.get_parameter(
@@ -140,13 +142,18 @@ def _get_player_count():
 
     try:
         import mcrcon
+        print(f"[rcon] connecting to {ip}:25575")
         with mcrcon.MCRcon(ip, rcon_password, port=25575) as rcon:
             response = rcon.command("list")
-            # "There are X of a max of Y players online"
-            count = int(response.split("There are ")[1].split(" of")[0])
+            print(f"[rcon] list response: {response!r}")
+            import re
+            m = re.search(r"There are (\d+)", response)
+            count = int(m.group(1)) if m else 0
+            print(f"[rcon] player count: {count}")
             return count
-    except Exception:
-        return 0
+    except Exception as e:
+        print(f"[rcon] ERROR ({type(e).__name__}): {e} — assuming players online to be safe")
+        return 1
 
 
 def _update_cloudflare_dns(ip):

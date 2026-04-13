@@ -120,7 +120,8 @@ resource "aws_iam_role_policy" "task_s3" {
       Action = ["s3:GetObject", "s3:ListBucket"]
       Resource = [
         "arn:aws:s3:::${var.mod_bucket_name}",
-        "arn:aws:s3:::${var.mod_bucket_name}/minecraft-mods/*"
+        "arn:aws:s3:::${var.mod_bucket_name}/minecraft-mods/*",
+        "arn:aws:s3:::${var.mod_bucket_name}/setup/*"
       ]
     }]
   })
@@ -130,8 +131,8 @@ resource "aws_ecs_task_definition" "minecraft" {
   family                   = "${var.project}-${var.environment}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 1024
-  memory                   = 4096
+  cpu                      = 2048
+  memory                   = 8192
   execution_role_arn       = aws_iam_role.task_execution.arn
   task_role_arn            = aws_iam_role.task.arn
 
@@ -194,9 +195,9 @@ resource "aws_ecs_service" "minecraft" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.private_subnet_ids
+    subnets          = var.public_subnet_ids
     security_groups  = [var.minecraft_sg_id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   deployment_circuit_breaker {

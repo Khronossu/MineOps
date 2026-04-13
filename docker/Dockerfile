@@ -3,6 +3,7 @@ FROM eclipse-temurin:21-jre-jammy
 RUN apt-get update && apt-get install -y \
     awscli \
     curl \
+    openjdk-8-jre \
     && rm -rf /var/lib/apt/lists/*
 
 # Install mcrcon for RCON health checks
@@ -15,7 +16,7 @@ RUN groupadd -g 1000 minecraft && useradd -u 1000 -g minecraft -m minecraft
 WORKDIR /minecraft
 
 COPY start.sh /docker/start.sh
-RUN chmod +x /docker/start.sh
+RUN sed -i 's/\r//' /docker/start.sh && chmod +x /docker/start.sh
 
 EXPOSE 25565 25575
 

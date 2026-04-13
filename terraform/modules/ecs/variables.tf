@@ -22,6 +22,10 @@ variable "private_subnet_ids" {
   type = list(string)
 }
 
+variable "public_subnet_ids" {
+  type = list(string)
+}
+
 variable "minecraft_sg_id" {
   type = string
 }

@@ -1,0 +1,7 @@
+{
+  "mc_version": "1.12.2",
+  "loader": "forge",
+  "loader_version": "14.23.5.2860",
+  "mods": ["RLCraft"],
+  "notes": "Requires 6GB RAM minimum. OptiFine is client-side only."
+}

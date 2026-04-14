@@ -63,7 +63,7 @@ aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/" /minecraft/mods/ \
   --delete \
   --exclude "server.jar" \
   --exclude "profile.json" \
-  --exclude "OpenTerrainGenerator/*"
+  --exclude "OpenTerrainGenerator*"
 
 # Sync extra folders (config, scripts, resources, structures)
 for DIR in config scripts resources structures; do
@@ -71,7 +71,7 @@ for DIR in config scripts resources structures; do
     echo "[start] Syncing ${DIR}..."
     aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" "/minecraft/${DIR}/" \
       --delete \
-      --exclude "OpenTerrainGenerator/*"
+      --exclude "OpenTerrainGenerator*"
   fi
 done
 

@@ -62,7 +62,8 @@ echo "[start] Syncing mods from S3..."
 aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/" /minecraft/mods/ \
   --delete \
   --exclude "server.jar" \
-  --exclude "profile.json"
+  --exclude "profile.json" \
+  --exclude "OpenTerrainGenerator/*"
 
 # Sync extra folders (config, scripts, resources, structures)
 for DIR in config scripts resources structures; do

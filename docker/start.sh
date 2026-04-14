@@ -24,7 +24,11 @@ for i in $(seq 1 10); do
   sleep 3
 done
 
-# Fetch profile.json from S3 to determine loader and Java version
+# Check if profile on EFS matches what's requested — skip sync if unchanged
+EFS_PROFILE_MARKER=/minecraft/.active_profile
+CURRENT_EFS_PROFILE=$(cat "$EFS_PROFILE_MARKER" 2>/dev/null || echo "")
+
+# Fetch profile.json from S3 to determine loader and Java version (always needed)
 echo "[start] Fetching profile metadata..."
 aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/profile.json" /tmp/profile.json 2>/dev/null || echo '{}' > /tmp/profile.json
 
@@ -43,40 +47,43 @@ else
   echo "[start] Using Java 21"
 fi
 
-# Always sync the correct server.jar from S3 for this profile
-echo "[start] Syncing server.jar for profile '${PROFILE}'..."
-aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/server.jar" /minecraft/server.jar
+if [ "$PROFILE" = "$CURRENT_EFS_PROFILE" ]; then
+  echo "[start] Profile unchanged on EFS — skipping S3 sync."
+else
+  echo "[start] Profile changed (was: '${CURRENT_EFS_PROFILE}', now: '${PROFILE}') — syncing from S3."
 
-# For Forge profiles, sync libraries too
-if [ "$LOADER" = "forge" ]; then
-  echo "[start] Syncing Forge libraries..."
-  aws s3 sync "s3://${MOD_BUCKET}/setup/libraries/" /minecraft/libraries/ --delete
-  aws s3 cp "s3://${MOD_BUCKET}/setup/minecraft_server.${MC_VERSION}.jar" "/minecraft/minecraft_server.${MC_VERSION}.jar" 2>/dev/null || true
+  echo "[start] Syncing server.jar..."
+  aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/server.jar" /minecraft/server.jar
+
+  if [ "$LOADER" = "forge" ]; then
+    echo "[start] Syncing Forge libraries..."
+    aws s3 sync "s3://${MOD_BUCKET}/setup/libraries/" /minecraft/libraries/ --delete
+    aws s3 cp "s3://${MOD_BUCKET}/setup/minecraft_server.${MC_VERSION}.jar" "/minecraft/minecraft_server.${MC_VERSION}.jar" 2>/dev/null || true
+  fi
+
+  echo "[start] Syncing mods..."
+  aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/" /minecraft/mods/ \
+    --delete \
+    --exclude "server.jar" \
+    --exclude "profile.json" \
+    --exclude "OpenTerrainGenerator*"
+
+  for DIR in config scripts resources structures; do
+    if aws s3 ls "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" > /dev/null 2>&1; then
+      echo "[start] Syncing ${DIR}..."
+      aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" "/minecraft/${DIR}/" \
+        --delete \
+        --exclude "OpenTerrainGenerator*"
+    fi
+  done
+
+  aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/server.properties" /minecraft/server.properties 2>/dev/null || true
+
+  echo "$PROFILE" > "$EFS_PROFILE_MARKER"
 fi
 
-# Ensure eula.txt exists
+# Ensure eula.txt exists (cheap, idempotent)
 echo "eula=true" > /minecraft/eula.txt
-
-# Sync mods from S3
-echo "[start] Syncing mods from S3..."
-aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/" /minecraft/mods/ \
-  --delete \
-  --exclude "server.jar" \
-  --exclude "profile.json" \
-  --exclude "OpenTerrainGenerator*"
-
-# Sync extra folders (config, scripts, resources, structures)
-for DIR in config scripts resources structures; do
-  if aws s3 ls "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" > /dev/null 2>&1; then
-    echo "[start] Syncing ${DIR}..."
-    aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" "/minecraft/${DIR}/" \
-      --delete \
-      --exclude "OpenTerrainGenerator*"
-  fi
-done
-
-# Copy server.properties from S3 (ensures RCON and other settings are always correct)
-aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/server.properties" /minecraft/server.properties 2>/dev/null || true
 
 echo "[start] Starting Minecraft server..."
 exec "$JAVA_BIN" \

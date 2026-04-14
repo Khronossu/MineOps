@@ -62,13 +62,16 @@ echo "[start] Syncing mods from S3..."
 aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/" /minecraft/mods/ \
   --delete \
   --exclude "server.jar" \
-  --exclude "profile.json"
+  --exclude "profile.json" \
+  --exclude "OpenTerrainGenerator/*"
 
 # Sync extra folders (config, scripts, resources, structures)
 for DIR in config scripts resources structures; do
   if aws s3 ls "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" > /dev/null 2>&1; then
     echo "[start] Syncing ${DIR}..."
-    aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" "/minecraft/${DIR}/" --delete
+    aws s3 sync "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/${DIR}/" "/minecraft/${DIR}/" \
+      --delete \
+      --exclude "OpenTerrainGenerator/*"
   fi
 done
 

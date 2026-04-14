@@ -77,7 +77,13 @@ aws s3 cp "s3://${MOD_BUCKET}/minecraft-mods/${PROFILE}/server.properties" /mine
 
 echo "[start] Starting Minecraft server..."
 exec "$JAVA_BIN" \
-  -Xms${JVM_MIN_MEM:-1G} \
-  -Xmx${JVM_MAX_MEM:-3G} \
+  -Xms${JVM_MIN_MEM:-6G} \
+  -Xmx${JVM_MAX_MEM:-6G} \
+  -XX:+UseG1GC \
+  -XX:+UnlockExperimentalVMOptions \
+  -XX:MaxGCPauseMillis=50 \
+  -XX:G1NewSizePercent=20 \
+  -XX:G1ReservePercent=20 \
+  -XX:G1HeapRegionSize=32M \
   -jar /minecraft/server.jar \
   nogui

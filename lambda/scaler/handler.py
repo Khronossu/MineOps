@@ -125,19 +125,27 @@ def switch_profile(profile):
     return {"status": "profile_switched", "profile": profile}
 
 
+def _get_active_profile():
+    try:
+        return ssm.get_parameter(Name="/minecraft/active-profile")["Parameter"]["Value"]
+    except Exception:
+        return "unknown"
+
+
 def web_status():
     svc = _describe_service()
     desired = svc["desiredCount"]
     running = svc["runningCount"]
+    profile = _get_active_profile()
 
     if desired == 0:
-        return {"state": "offline", "players": 0, "domain": DOMAIN_NAME}
+        return {"state": "offline", "players": 0, "domain": DOMAIN_NAME, "profile": profile}
     if running == 0:
-        return {"state": "booting", "players": 0, "domain": DOMAIN_NAME}
+        return {"state": "booting", "players": 0, "domain": DOMAIN_NAME, "profile": profile}
 
     ip = _get_task_public_ip()
     if not ip:
-        return {"state": "booting", "players": 0, "domain": DOMAIN_NAME}
+        return {"state": "booting", "players": 0, "domain": DOMAIN_NAME, "profile": profile}
 
     try:
         rcon_password = ssm.get_parameter(
@@ -148,9 +156,9 @@ def web_status():
             response = rcon.command("list")
             m = re.search(r"There are (\d+)", response)
             count = int(m.group(1)) if m else 0
-            return {"state": "online", "players": count, "domain": DOMAIN_NAME}
+            return {"state": "online", "players": count, "domain": DOMAIN_NAME, "profile": profile}
     except Exception:
-        return {"state": "booting", "players": 0, "domain": DOMAIN_NAME}
+        return {"state": "booting", "players": 0, "domain": DOMAIN_NAME, "profile": profile}
 
 
 def _describe_service():

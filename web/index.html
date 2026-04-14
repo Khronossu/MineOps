@@ -412,7 +412,7 @@
       </div>
       <div class="stat">
         <div class="stat-label">Profile</div>
-        <div class="stat-value muted" id="profile">rlcraft</div>
+        <div class="stat-value muted" id="profile">—</div>
       </div>
     </section>
 
@@ -449,11 +449,13 @@
 
     function render(d) {
       const frame = $("frame"), state = $("state"),
-            players = $("players"), domain = $("domain"), btn = $("startBtn");
+            players = $("players"), domain = $("domain"), btn = $("startBtn"),
+            profile = $("profile");
 
       frame.className = `frame state-${d.state}`;
 
       domain.textContent = `${d.domain}:25565`;
+      if (d.profile) profile.textContent = d.profile;
 
       if (d.state === "online") {
         state.textContent = "ONLINE";
